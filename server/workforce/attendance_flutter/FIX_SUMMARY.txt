@@ -1,0 +1,40 @@
+Attendance App Full Cloud Route Fix
+===================================
+
+Cloud backend URL:
+https://attendance-backend.abrar-attendance.workers.dev
+
+Fixed/implemented Cloudflare Worker routes:
+- network check
+- password login + role routing
+- biometric registration + biometric login
+- password change
+- session status / persistent session
+- network interval tracking
+- checkout verification
+- report + checkout
+- shift request
+- leave apply + leave status
+- admin session
+- management overview
+- admin dashboard summary
+- attendance list + CSV export
+- users list + Owner add-user
+- device reset
+- IP/activity logs
+- leave approve/reject
+- shift approve/reject
+- announcements create/delete
+- employee announcement feed
+- visitor register/list/checkout
+- Italy consent create/list/mark-signed
+- CCTV login
+- admin web login
+- network disconnect log endpoint
+
+Important:
+1. Do not add /api to API_BASE_URL.
+2. Deploy from attendance_worker using deploy_cloudflare.ps1.
+3. Flutter APK build command:
+   flutter build apk --release --dart-define=API_BASE_URL=https://attendance-backend.abrar-attendance.workers.dev
+4. If the app is uninstalled, secure biometric tokens on the phone are removed. Register fingerprint again after reinstall.

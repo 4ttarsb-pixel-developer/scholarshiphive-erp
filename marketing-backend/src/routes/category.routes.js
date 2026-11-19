@@ -1,0 +1,12 @@
+const router=require('express').Router();
+const controller=require('../controllers/category.controller');
+const { requireDemoMutation }=require('../utils/http');
+const {adminOnly}=require('../middleware/auth');
+router.get('/',controller.getAll);
+router.get('/:id',controller.getById);
+router.post('/',adminOnly,requireDemoMutation,controller.create);
+router.patch('/:id',adminOnly,requireDemoMutation,controller.update);
+router.post('/:id/subcategories',adminOnly,requireDemoMutation,controller.addSubcategory);
+router.delete('/:id/subcategories/:subId',adminOnly,requireDemoMutation,controller.removeSubcategory);
+router.delete('/:id',adminOnly,requireDemoMutation,controller.remove);
+module.exports=router;

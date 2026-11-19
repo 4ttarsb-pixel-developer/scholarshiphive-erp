@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS OfficeNetworks (
+  Id INTEGER PRIMARY KEY AUTOINCREMENT,
+  Name TEXT NOT NULL,
+  PublicIp TEXT NOT NULL UNIQUE,
+  IsActive INTEGER NOT NULL DEFAULT 1,
+  CreatedAt TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS IX_OfficeNetworks_PublicIp ON OfficeNetworks(PublicIp);
+CREATE INDEX IF NOT EXISTS IX_OfficeNetworks_IsActive ON OfficeNetworks(IsActive);

@@ -1,0 +1,12 @@
+﻿{
+  "name": "attendance-backend",
+  "main": "src/index.js",
+  "compatibility_date": "2026-10-22",
+  "d1_databases": [
+    {
+      "binding": "attendance_db",
+      "database_name": "attendance-db",
+      "database_id": "94e17aaf-b7f3-4b86-a939-badac724bb76"
+    }
+  ]
+}

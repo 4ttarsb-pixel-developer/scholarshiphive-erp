@@ -1,0 +1,13 @@
+const router=require('express').Router();
+const service=require('../services/attribution.service');
+const {adminOnly}=require('../middleware/auth');
+const {wrap,requireDemoMutation}=require('../utils/http');
+router.get('/counsellors',wrap(async(req,res)=>res.json({success:true,data:await service.directory(req.user)})));
+router.post('/counsellors',adminOnly,requireDemoMutation,wrap(async(req,res)=>res.status(201).json({success:true,data:await service.createCounsellor(req.body,req.user)})));
+router.patch('/counsellors/:id/status',adminOnly,requireDemoMutation,wrap(async(req,res)=>res.json({success:true,data:await service.setCounsellorStatus(req.params.id,req.body?.status,req.user)})));
+router.get('/accounts/:id/campaigns',wrap(async(req,res)=>res.json({success:true,data:await service.campaignOverview(req.params.id,req.user,req.query)})));
+router.put('/accounts/:id/mappings',adminOnly,requireDemoMutation,wrap(async(req,res)=>res.json({success:true,data:await service.saveMapping(req.params.id,req.body,req.user)})));
+router.delete('/accounts/:id/mappings/:campaignId',adminOnly,requireDemoMutation,wrap(async(req,res)=>res.json({success:true,data:await service.removeMapping(req.params.id,req.params.campaignId,req.user)})));
+router.get('/accounts/:id/history',wrap(async(req,res)=>res.json({success:true,data:await service.history(req.params.id,req.user)})));
+router.get('/report',wrap(async(req,res)=>res.json({success:true,data:await service.report(req.user,req.query)})));
+module.exports=router;

@@ -1,0 +1,44 @@
+WIFI / MOBILE NETWORK FIX - 2026-10-26
+======================================
+
+What was fixed
+--------------
+1. Local ASP.NET backend now has working Admin network routes:
+   GET    /api/admin/networks
+   GET    /api/admin/networks/current-ip
+   POST   /api/admin/networks
+   DELETE /api/admin/networks/{id}
+
+2. Local admin network rules are stored in SQLite OfficeNetworkRules.
+
+3. Local private router IPv4 such as 192.168.10.1 defaults to /24.
+   This allows employee devices on 192.168.10.x to use attendance.
+
+4. IPv6 defaults to /64 so devices on the same IPv6 office network can match.
+
+5. Cloudflare Worker fix:
+   A cloud server cannot see a private router IP like 192.168.10.1.
+   If Admin enters a private router IP while connected to that office Wi-Fi,
+   the Worker saves the real public IP/range observed by Cloudflare instead.
+   This fixes the common "Admin saved 192.x but phone is detected as 154.x" issue.
+
+6. Multiple approved Wi-Fi/network rules can be added or removed.
+
+7. There is NO one-IP-one-employee rule in this build.
+   Many employees can share one approved office public IP/NAT Wi-Fi.
+   Employee identity/device security remains separate from network authorization.
+
+Important real-world note
+-------------------------
+For deployed/cloud mode, always prefer "Use My Current Network" while Admin is
+physically connected to the office Wi-Fi. Private LAN addresses (192.168.x.x,
+10.x.x.x, 172.16-31.x.x) are not visible to a public cloud server.
+
+If the same office Wi-Fi uses both public IPv4 and public IPv6, save both network
+identities under the same office name when needed. IPv6 is stored as /64.
+
+Deployment
+----------
+Backend: deploy_cloudflare.ps1
+Admin web: deploy_admin_pages.ps1
+Flutter web app: deploy_app_pages.ps1

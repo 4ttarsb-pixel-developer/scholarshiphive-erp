@@ -1,0 +1,7 @@
+{
+  "name": "scholarshiphive-workforce-module",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "description": "Integrated employee, attendance and payroll module for ScholarshipHive ERP"
+}

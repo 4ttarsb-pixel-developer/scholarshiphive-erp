@@ -1,0 +1,1014 @@
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import '../admin_dashboard_screen.dart';
+import '../services/attendance_service.dart';
+import '../services/biometric_service.dart';
+import '../services/device_service.dart';
+import '../services/session_service.dart';
+import 'login_screen.dart';
+
+class ManagementDashboardScreen extends StatefulWidget {
+  final String userName;
+  final String role;
+  final String adminToken;
+
+  const ManagementDashboardScreen({
+    super.key,
+    required this.userName,
+    required this.role,
+    required this.adminToken,
+  });
+
+  @override
+  State<ManagementDashboardScreen> createState() =>
+      _ManagementDashboardScreenState();
+}
+
+class _ManagementDashboardScreenState extends State<ManagementDashboardScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  bool _isLoading = true;
+  List<dynamic> _leaves = [];
+  List<dynamic> _shifts = [];
+  List<dynamic> _notes = [];
+  List<dynamic> _visitors = [];
+
+  Map<String, String> get _adminHeaders => {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer ${widget.adminToken}',
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 4, vsync: this);
+    _fetchOverviewData();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _fetchOverviewData() async {
+    setState(() => _isLoading = true);
+    try {
+      final res = await http.get(
+        Uri.parse('${ApiConfig.serverBaseUrl}/api/admin/overview'),
+        headers: _adminHeaders,
+      );
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        setState(() {
+          _leaves = data['leaves'] ?? [];
+          _shifts = data['shifts'] ?? [];
+          _notes = data['notes'] ?? [];
+          _visitors = data['visitors'] ?? [];
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to load management records.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _updateLeave(int id, String action) async {
+    final res = await http.post(
+      Uri.parse('${ApiConfig.serverBaseUrl}/api/admin/leave/action'),
+      headers: _adminHeaders,
+      body: jsonEncode({'requestId': id, 'action': action}),
+    );
+    if (res.statusCode == 200) _fetchOverviewData();
+  }
+
+  Future<void> _updateShift(int id, String action) async {
+    final res = await http.post(
+      Uri.parse('${ApiConfig.serverBaseUrl}/api/admin/shift/action'),
+      headers: _adminHeaders,
+      body: jsonEncode({'shiftId': id, 'action': action}),
+    );
+    if (res.statusCode == 200) _fetchOverviewData();
+  }
+
+  Future<void> _deleteNote(int id) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Notice'),
+        content: const Text(
+          'Are you sure you want to permanently remove this announcement?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final res = await http.delete(
+        Uri.parse('${ApiConfig.serverBaseUrl}/api/admin/notes/delete/$id'),
+        headers: _adminHeaders,
+      );
+      if (res.statusCode == 200) {
+        _fetchOverviewData();
+      }
+    }
+  }
+
+  Future<void> _signOut() async {
+    try {
+      await http
+          .delete(
+            Uri.parse('${ApiConfig.serverBaseUrl}/api/admin/session'),
+            headers: _adminHeaders,
+          )
+          .timeout(const Duration(seconds: 5));
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Session could not be revoked on the server.'),
+          ),
+        );
+      }
+    }
+    await SessionService.clear();
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (route) => false,
+    );
+  }
+
+  Future<void> _showAccountSettings() async {
+    final currentPassword = TextEditingController();
+    final newPassword = TextEditingController();
+    final confirmPassword = TextEditingController();
+    bool fingerprintReady = false;
+    bool saving = false;
+
+    try {
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            title: const Text('Account Security'),
+            content: SizedBox(
+              width: 420,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: currentPassword,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Current password',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: newPassword,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        labelText: 'New password (optional)',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: confirmPassword,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Confirm new password',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    OutlinedButton.icon(
+                      onPressed: saving
+                          ? null
+                          : () async {
+                              if (!await BiometricService.isBiometricAvailable()) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Fingerprint authentication is unavailable on this device.')),
+                                  );
+                                }
+                                return;
+                              }
+                              final ok = await BiometricService.authenticateUser(
+                                reason: 'Scan your fingerprint to register sign-in',
+                              );
+                              if (ok && context.mounted) {
+                                setDialogState(() => fingerprintReady = true);
+                              }
+                            },
+                      icon: Icon(
+                        fingerprintReady ? Icons.verified : Icons.fingerprint,
+                      ),
+                      label: Text(
+                        fingerprintReady ? 'Fingerprint verified' : 'Register fingerprint',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: saving ? null : () => Navigator.pop(dialogContext),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: saving
+                    ? null
+                    : () async {
+                        final current = currentPassword.text;
+                        final next = newPassword.text;
+                        if (current.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Enter your current password.')),
+                          );
+                          return;
+                        }
+                        if (next.isNotEmpty && (next.length < 4 || next != confirmPassword.text)) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('New passwords must match and contain at least 4 characters.')),
+                          );
+                          return;
+                        }
+                        if (!fingerprintReady && next.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Choose a new password or verify your fingerprint first.')),
+                          );
+                          return;
+                        }
+                        setDialogState(() => saving = true);
+                        try {
+                          if (fingerprintReady) {
+                            final deviceId = await DeviceService.getDeviceId();
+                            final token = await AttendanceService.registerBiometric(
+                              username: widget.userName,
+                              password: current,
+                              deviceId: deviceId,
+                            );
+                            await BiometricService.saveToken(widget.userName, token);
+                          }
+                          if (next.isNotEmpty) {
+                            await AttendanceService.changePassword(
+                              username: widget.userName,
+                              currentPassword: current,
+                              newPassword: next,
+                            );
+                          }
+                          if (!dialogContext.mounted) return;
+                          Navigator.pop(dialogContext);
+                          if (mounted) {
+                            ScaffoldMessenger.of(this.context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  fingerprintReady && next.isNotEmpty
+                                      ? 'Password changed and fingerprint sign-in enabled.'
+                                      : fingerprintReady
+                                          ? 'Fingerprint sign-in enabled.'
+                                          : 'Password changed successfully.',
+                                ),
+                              ),
+                            );
+                          }
+                        } on AttendanceException catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(e.message)),
+                            );
+                            setDialogState(() => saving = false);
+                          }
+                        }
+                      },
+                child: Text(saving ? 'Saving...' : 'Save'),
+              ),
+            ],
+          ),
+        ),
+      );
+    } finally {
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+      currentPassword.dispose();
+      newPassword.dispose();
+      confirmPassword.dispose();
+    }
+  }
+
+  Future<void> _showAddUserDialog() async {
+    if (widget.role != 'Owner') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Only the Owner can add new users.')),
+      );
+      return;
+    }
+
+    final username = TextEditingController();
+    final fullName = TextEditingController();
+    final email = TextEditingController();
+    final password = TextEditingController();
+    final team = TextEditingController(text: 'Processing');
+    String role = 'Staff';
+    bool allowMobile = true;
+    bool allowWeb = true;
+    bool hasCctvAccess = false;
+    bool saving = false;
+
+    try {
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            title: const Text('Add New User / Employee'),
+            content: SizedBox(
+              width: 460,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(controller: username, decoration: const InputDecoration(labelText: 'Username', border: OutlineInputBorder())),
+                    const SizedBox(height: 10),
+                    TextField(controller: fullName, decoration: const InputDecoration(labelText: 'Full name', border: OutlineInputBorder())),
+                    const SizedBox(height: 10),
+                    TextField(controller: email, keyboardType: TextInputType.emailAddress, decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder())),
+                    const SizedBox(height: 10),
+                    TextField(controller: password, obscureText: true, decoration: const InputDecoration(labelText: 'Temporary password', border: OutlineInputBorder())),
+                    const SizedBox(height: 10),
+                    DropdownButtonFormField<String>(
+                      initialValue: role,
+                      decoration: const InputDecoration(labelText: 'Role', border: OutlineInputBorder()),
+                      items: const [
+                        DropdownMenuItem(value: 'Staff', child: Text('Staff')),
+                        DropdownMenuItem(value: 'Receptionist', child: Text('Receptionist')),
+                        DropdownMenuItem(value: 'Country Actor', child: Text('Country Actor')),
+                        DropdownMenuItem(value: 'Head of Marketing', child: Text('Head of Marketing')),
+                        DropdownMenuItem(value: 'Head of Processing', child: Text('Head of Processing')),
+                        DropdownMenuItem(value: 'Owner', child: Text('Owner')),
+                      ],
+                      onChanged: (value) => setDialogState(() => role = value ?? 'Staff'),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(controller: team, decoration: const InputDecoration(labelText: 'Team / Department', border: OutlineInputBorder())),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Allow mobile'),
+                      value: allowMobile,
+                      onChanged: (value) => setDialogState(() => allowMobile = value),
+                    ),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Allow web'),
+                      value: allowWeb,
+                      onChanged: (value) => setDialogState(() => allowWeb = value),
+                    ),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('CCTV access'),
+                      value: hasCctvAccess,
+                      onChanged: (value) => setDialogState(() => hasCctvAccess = value),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: saving ? null : () => Navigator.pop(dialogContext), child: const Text('Cancel')),
+              FilledButton(
+                onPressed: saving
+                    ? null
+                    : () async {
+                        if (username.text.trim().isEmpty || fullName.text.trim().isEmpty || password.text.length < 4) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Username, full name, and a password of at least 4 characters are required.')),
+                          );
+                          return;
+                        }
+                        setDialogState(() => saving = true);
+                        try {
+                          final res = await http.post(
+                            Uri.parse('${ApiConfig.serverBaseUrl}/api/admin/users'),
+                            headers: _adminHeaders,
+                            body: jsonEncode({
+                              'username': username.text.trim(),
+                              'fullName': fullName.text.trim(),
+                              'email': email.text.trim(),
+                              'password': password.text,
+                              'role': role,
+                              'team': team.text.trim(),
+                              'allowMobile': allowMobile,
+                              'allowWeb': allowWeb,
+                              'hasCctvAccess': hasCctvAccess,
+                            }),
+                          );
+                          final data = res.body.isEmpty ? <String, dynamic>{} : Map<String, dynamic>.from(jsonDecode(res.body) as Map);
+                          if (res.statusCode < 200 || res.statusCode >= 300) {
+                            throw AttendanceException(data['message']?.toString() ?? 'User could not be created.');
+                          }
+                          if (!dialogContext.mounted) return;
+                          Navigator.pop(dialogContext);
+                          if (mounted) {
+                            ScaffoldMessenger.of(this.context).showSnackBar(
+                              SnackBar(content: Text(data['message']?.toString() ?? 'User created successfully.')),
+                            );
+                          }
+                        } on AttendanceException catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+                            setDialogState(() => saving = false);
+                          }
+                        }
+                      },
+                child: Text(saving ? 'Creating...' : 'Create User'),
+              ),
+            ],
+          ),
+        ),
+      );
+    } finally {
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+      username.dispose();
+      fullName.dispose();
+      email.dispose();
+      password.dispose();
+      team.dispose();
+    }
+  }
+
+  void _openAttendanceAdmin() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => AdminDashboardScreen(
+          userName: widget.userName,
+          role: widget.role,
+          adminToken: widget.adminToken,
+        ),
+      ),
+    );
+  }
+
+  void _showPublishNoteDialog() {
+    final titleCtrl = TextEditingController();
+    final contentCtrl = TextEditingController();
+    String targetType = 'All';
+    final targetValCtrl = TextEditingController(text: 'All');
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        final screenWidth = MediaQuery.of(ctx).size.width;
+        final dialogWidth = screenWidth > 500 ? 440.0 : screenWidth * 0.88;
+
+        return StatefulBuilder(
+          builder: (context, setDState) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Text(
+              'Publish Announcement (${widget.role})',
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+            ),
+            content: SizedBox(
+              width: dialogWidth,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextField(
+                      controller: titleCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Title',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue: targetType,
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Broadcast Scope',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.fromLTRB(12, 16, 8, 16),
+                      ),
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'All',
+                          child: Text('All Employees'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Team',
+                          child: Text('Specific Department'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Individual',
+                          child: Text('Specific Individual'),
+                        ),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) {
+                          setDState(() {
+                            targetType = val;
+                            targetValCtrl.text = val == 'All' ? 'All' : '';
+                          });
+                        }
+                      },
+                    ),
+                    if (targetType != 'All') ...[
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: targetValCtrl,
+                        decoration: InputDecoration(
+                          labelText: targetType == 'Team'
+                              ? 'Department (e.g. Processing, Marketing)'
+                              : 'Username (e.g. ali, sara)',
+                          border: const OutlineInputBorder(),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: contentCtrl,
+                      maxLines: 4,
+                      keyboardType: TextInputType.multiline,
+                      decoration: const InputDecoration(
+                        labelText: 'Message Body',
+                        alignLabelWithHint: true,
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.indigo,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () async {
+                  if (titleCtrl.text.trim().isEmpty ||
+                      contentCtrl.text.trim().isEmpty) {
+                    return;
+                  }
+                  await http.post(
+                    Uri.parse(
+                      '${ApiConfig.serverBaseUrl}/api/admin/notes/create',
+                    ),
+                    headers: _adminHeaders,
+                    body: jsonEncode({
+                      'title': titleCtrl.text.trim(),
+                      'content': contentCtrl.text.trim(),
+                      'authorRole': widget.role,
+                      'targetType': targetType,
+                      'targetValue': targetValCtrl.text.trim(),
+                    }),
+                  );
+                  if (context.mounted) Navigator.pop(ctx);
+                  _fetchOverviewData();
+                },
+                child: const Text('Broadcast Note'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isCompact = MediaQuery.sizeOf(context).width < 620;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          '${widget.role} Console (${widget.userName})',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.indigo,
+        foregroundColor: Colors.white,
+        actions: [
+          if (isCompact)
+            PopupMenuButton<String>(
+              onSelected: (value) {
+                switch (value) {
+                  case 'refresh':
+                    _fetchOverviewData();
+                    break;
+                  case 'admin':
+                    _openAttendanceAdmin();
+                    break;
+                  case 'announcement':
+                    _showPublishNoteDialog();
+                    break;
+                  case 'account':
+                    _showAccountSettings();
+                    break;
+                  case 'add-user':
+                    _showAddUserDialog();
+                    break;
+                  case 'sign-out':
+                    _signOut();
+                    break;
+                }
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem(value: 'refresh', child: Text('Refresh')),
+                const PopupMenuItem(
+                  value: 'admin',
+                  child: Text('Attendance Administration'),
+                ),
+                const PopupMenuItem(
+                  value: 'announcement',
+                  child: Text('Publish Announcement'),
+                ),
+                const PopupMenuItem(value: 'account', child: Text('Account Security')),
+                if (widget.role == 'Owner')
+                  const PopupMenuItem(value: 'add-user', child: Text('Add User / Employee')),
+                const PopupMenuItem(value: 'sign-out', child: Text('Sign Out')),
+              ],
+            )
+          else ...[
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: _fetchOverviewData,
+            ),
+            IconButton(
+              icon: const Icon(Icons.admin_panel_settings_outlined),
+              tooltip: 'Attendance Administration',
+              onPressed: _openAttendanceAdmin,
+            ),
+            IconButton(
+              icon: const Icon(Icons.campaign_outlined),
+              onPressed: _showPublishNoteDialog,
+              tooltip: 'Publish Announcement',
+            ),
+            IconButton(
+              icon: const Icon(Icons.manage_accounts_outlined),
+              onPressed: _showAccountSettings,
+              tooltip: 'Change Password / Fingerprint',
+            ),
+            if (widget.role == 'Owner')
+              IconButton(
+                icon: const Icon(Icons.person_add_alt_1),
+                onPressed: _showAddUserDialog,
+                tooltip: 'Add User / Employee',
+              ),
+            IconButton(
+              icon: const Icon(Icons.logout),
+              onPressed: _signOut,
+              tooltip: 'Sign Out',
+            ),
+          ],
+        ],
+        bottom: TabBar(
+          controller: _tabController,
+          isScrollable: true,
+          indicatorColor: Colors.white,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white70,
+          tabs: const [
+            Tab(icon: Icon(Icons.assignment_outlined), text: 'Leaves'),
+            Tab(icon: Icon(Icons.schedule), text: 'Shifts'),
+            Tab(icon: Icon(Icons.mark_email_read_outlined), text: 'Notices'),
+            Tab(icon: Icon(Icons.people_outline), text: 'Visitor Logs'),
+          ],
+        ),
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : TabBarView(
+              controller: _tabController,
+              children: [
+                // Leaves Tab
+                _leaves.isEmpty
+                    ? const Center(child: Text('No leave applications found.'))
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _leaves.length,
+                        itemBuilder: (ctx, i) {
+                          final item = _leaves[i];
+                          final isPending = item['status'] == 'Pending';
+                          final title =
+                              '${item['username'].toString().toUpperCase()} — ${item['leaveType']}';
+                          final subtitle =
+                              'Department: ${item['department']}\nDate: ${item['leaveDate']}\nReason: ${item['reason']}\nStatus: ${item['status']}';
+                          final actions = isPending
+                              ? Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.check,
+                                        color: Colors.green,
+                                      ),
+                                      onPressed: () => _updateLeave(
+                                        item['id'],
+                                        'Approved',
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.close,
+                                        color: Colors.red,
+                                      ),
+                                      onPressed: () => _updateLeave(
+                                        item['id'],
+                                        'Denied',
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : Text(
+                                  '${item['status']}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                );
+                          final narrow =
+                              MediaQuery.sizeOf(context).width < 600;
+
+                          return Card(
+                            elevation: 2,
+                            margin: const EdgeInsets.only(bottom: 12),
+                            child: narrow
+                                ? Padding(
+                                    padding: const EdgeInsets.all(12),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(title),
+                                        const SizedBox(height: 6),
+                                        Text(subtitle),
+                                        const SizedBox(height: 4),
+                                        Align(
+                                          alignment: Alignment.centerRight,
+                                          child: actions,
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : ListTile(
+                                    title: Text(
+                                      title,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    subtitle: Text(subtitle),
+                                    trailing: actions,
+                                  ),
+                          );
+                        },
+                      ),
+
+                // Shifts Tab
+                _shifts.isEmpty
+                    ? const Center(
+                        child: Text('No custom shift requests found.'),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _shifts.length,
+                        itemBuilder: (ctx, i) {
+                          final item = _shifts[i];
+                          ffinal isPending =
+    item['status'] == 'Pending' ||
+    item['status'] == 'Pending Approval';s
+                          final title =
+                              '${item['username'].toString().toUpperCase()} — Custom Shift';
+                          final subtitle =
+                              'Timing: ${item['customTiming']}\nRequested At: ${item['requestedAt']}\nStatus: ${item['status']}';
+                          final actions = isPending
+                              ? Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.check,
+                                        color: Colors.green,
+                                      ),
+                                      onPressed: () => _updateShift(
+                                        item['id'],
+                                        'Approved',
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.close,
+                                        color: Colors.red,
+                                      ),
+                                      onPressed: () => _updateShift(
+                                        item['id'],
+                                        'Denied',
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : Text(
+                                  '${item['status']}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                );
+                          final narrow =
+                              MediaQuery.sizeOf(context).width < 600;
+
+                          return Card(
+                            elevation: 2,
+                            margin: const EdgeInsets.only(bottom: 12),
+                            child: narrow
+                                ? Padding(
+                                    padding: const EdgeInsets.all(12),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(title),
+                                        const SizedBox(height: 6),
+                                        Text(subtitle),
+                                        const SizedBox(height: 4),
+                                        Align(
+                                          alignment: Alignment.centerRight,
+                                          child: actions,
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : ListTile(
+                                    title: Text(
+                                      title,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    subtitle: Text(subtitle),
+                                    trailing: actions,
+                                  ),
+                          );
+                        },
+                      ),
+
+                // Notices Tab
+                _notes.isEmpty
+                    ? const Center(child: Text('No active notices.'))
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _notes.length,
+                        itemBuilder: (ctx, i) {
+                          final item = _notes[i];
+                          final bool canDelete =
+                              widget.role == 'Owner' ||
+                              widget.role == 'Country Actor' ||
+                              item['authorRole'] == widget.role;
+
+                          return Card(
+                            elevation: 2,
+                            margin: const EdgeInsets.only(bottom: 12),
+                            child: ListTile(
+                              title: Text(
+                                item['title'],
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              subtitle: Text(
+                                '${item['content']}\n\nScope: ${item['targetType']} (${item['targetValue']}) • By: ${item['authorRole']} • ${item['createdAt']}',
+                              ),
+                              trailing: canDelete
+                                  ? IconButton(
+                                      icon: const Icon(
+                                        Icons.delete_outline,
+                                        color: Colors.redAccent,
+                                      ),
+                                      tooltip: 'Delete Announcement',
+                                      onPressed: () => _deleteNote(item['id']),
+                                    )
+                                  : null,
+                            ),
+                          );
+                        },
+                      ),
+
+                // FIXED: VISITOR LOGS TAB (PDF Form Fields Integrated)
+                _visitors.isEmpty
+                    ? const Center(child: Text('No visitor records found.'))
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _visitors.length,
+                        itemBuilder: (ctx, i) {
+                          final item = _visitors[i];
+                          final bool isInside = item['status'] == 'Checked In';
+
+                          // Support both old and new schema keys smoothly
+                          final String visitorName =
+                              item['fullName'] ??
+                              item['visitorName'] ??
+                              'Visitor';
+                          final String contact =
+                              item['contactNumber'] ??
+                              item['phoneOrCnic'] ??
+                              'N/A';
+                          final String counsellor =
+                              item['counsellorName'] ??
+                              item['whomToMeet'] ??
+                              'N/A';
+                          final String program =
+                              item['interestedProgram'] ??
+                              item['purpose'] ??
+                              'General Inquiry';
+                          final String country =
+                              item['interestedCountry'] ?? '';
+                          final String remarks = item['finalRemarks'] ?? '';
+
+                          return Card(
+                            elevation: 2,
+                            margin: const EdgeInsets.only(bottom: 12),
+                            child: ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: isInside
+                                    ? Colors.green.shade50
+                                    : Colors.grey.shade200,
+                                child: Icon(
+                                  Icons.co_present_outlined,
+                                  color: isInside ? Colors.green : Colors.grey,
+                                ),
+                              ),
+                              title: Text(
+                                '$visitorName ${country.isNotEmpty ? "($country)" : ""}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
+                              ),
+                              subtitle: Text(
+                                'Contact: $contact • Counsellor: $counsellor\n'
+                                'Program: $program\n'
+                                '${remarks.isNotEmpty ? "Remarks: $remarks\n" : ""}'
+                                'Logged by: ${item['registeredBy'] ?? "reception"} • In: ${item['checkInTime'] ?? "N/A"}'
+                                '${item['checkOutTime'] != null ? " • Out: ${item['checkOutTime']}" : ""}',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  height: 1.3,
+                                ),
+                              ),
+                              trailing: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isInside
+                                      ? Colors.green.shade100
+                                      : Colors.grey.shade200,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  item['status'] ?? 'Unknown',
+                                  style: TextStyle(
+                                    color: isInside
+                                        ? Colors.green.shade900
+                                        : Colors.grey.shade700,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+              ],
+            ),
+    );
+  }
+}

@@ -1,0 +1,12 @@
+const router=require('express').Router();
+const {adminOnly}=require('../middleware/auth');
+const {requireDemoMutation,wrap}=require('../utils/http');
+const service=require('../services/ad-account.service');
+router.get('/',wrap(async(req,res)=>res.json({success:true,data:await service.all(req.user,req.query)})));
+router.get('/:id',wrap(async(req,res)=>res.json({success:true,data:await service.get(req.params.id,req.user)})));
+router.post('/',adminOnly,requireDemoMutation,wrap(async(req,res)=>res.status(201).json({success:true,data:await service.create(req.body,req.user)})));
+router.patch('/:id',adminOnly,requireDemoMutation,wrap(async(req,res)=>res.json({success:true,data:await service.update(req.params.id,req.body,req.user)})));
+router.delete('/:id',adminOnly,requireDemoMutation,wrap(async(req,res)=>res.json({success:true,data:await service.remove(req.params.id)})));
+router.post('/:id/assignments',adminOnly,requireDemoMutation,wrap(async(req,res)=>res.status(201).json({success:true,data:await service.assign(req.params.id,req.body?.userId,req.user)})));
+router.delete('/:id/assignments/:userId',adminOnly,requireDemoMutation,wrap(async(req,res)=>res.json({success:true,data:await service.unassign(req.params.id,req.params.userId,req.user)})));
+module.exports=router;

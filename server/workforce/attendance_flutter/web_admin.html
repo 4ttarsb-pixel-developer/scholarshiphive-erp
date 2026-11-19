@@ -1,0 +1,2203 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
+<title>
+Attendance Administration
+</title>
+
+<style>
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #f4f7fb;
+    color: #172033;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.hidden {
+    display: none !important;
+}
+
+button,
+input,
+select {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+#loginScreen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:
+        linear-gradient(
+            135deg,
+            #0f4da8,
+            #183e74
+        );
+}
+
+.login-box {
+    width: 420px;
+    max-width: calc(100% - 30px);
+    background: white;
+    border-radius: 14px;
+    padding: 30px;
+    box-shadow:
+        0 20px 60px
+        rgba(0,0,0,.25);
+}
+
+.login-box h1 {
+    margin: 0 0 7px;
+}
+
+.login-box p {
+    color: #6b7280;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.field {
+    margin: 15px 0;
+}
+
+.field label {
+    display: block;
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+
+.field input {
+    width: 100%;
+    height: 42px;
+    padding: 0 10px;
+    border: 1px solid #d7deea;
+    border-radius: 7px;
+}
+
+.login-btn {
+    width: 100%;
+    height: 44px;
+    border: 0;
+    border-radius: 7px;
+    background: #104da7;
+    color: white;
+    font-weight: bold;
+}
+
+#errorBox {
+    display: none;
+    margin-top: 12px;
+    background: #ffe5e7;
+    color: #a61f27;
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 12px;
+}
+
+header {
+    min-height: 90px;
+    padding: 20px 26px;
+    background:
+        linear-gradient(
+            90deg,
+            #104ea8,
+            #174983
+        );
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 24px;
+}
+
+header p {
+    margin: 5px 0 0;
+    font-size: 12px;
+    opacity: .9;
+}
+
+.logout {
+    padding: 9px 13px;
+    border: 1px solid
+        rgba(255,255,255,.4);
+    border-radius: 7px;
+    background:
+        rgba(255,255,255,.12);
+    color: white;
+}
+
+.container {
+    max-width: 1500px;
+    margin: auto;
+    padding: 18px;
+}
+
+.cards {
+    display: grid;
+    grid-template-columns:
+        repeat(
+            6,
+            minmax(140px, 1fr)
+        );
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.card {
+    background: white;
+    border: 1px solid #e7ebf3;
+    border-radius: 10px;
+    padding: 16px;
+    box-shadow:
+        0 4px 18px
+        rgba(0,0,0,.05);
+}
+
+.card small {
+    display: block;
+    color: #778195;
+    margin-bottom: 8px;
+}
+
+.card strong {
+    font-size: 27px;
+}
+
+.panel {
+    background: white;
+    border: 1px solid #e5eaf2;
+    border-radius: 10px;
+    margin-bottom: 18px;
+    box-shadow:
+        0 4px 18px
+        rgba(0,0,0,.05);
+    overflow: hidden;
+}
+
+.panel-title {
+    padding: 15px 16px 8px;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.panel-title h2 {
+    margin: 0;
+    font-size: 17px;
+}
+
+.panel-title p {
+    margin: 5px 0 0;
+    color: #7a8496;
+    font-size: 11px;
+}
+
+.actions {
+    display: flex;
+    gap: 7px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    min-height: 44px;
+    padding: 0 18px;
+
+    border: none;
+    border-radius: 8px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 6px;
+
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+
+    text-align: center;
+    white-space: nowrap;
+
+    cursor: pointer;
+}
+
+.btn-green {
+    background: #0b9953;
+    color: #ffffff;
+
+    min-width: 170px;
+
+    box-shadow:
+        0 2px 6px
+        rgba(0, 0, 0, 0.12);
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.btn-green:hover {
+    background: #087f45;
+
+    box-shadow:
+        0 4px 10px
+        rgba(0, 0, 0, 0.16);
+}
+
+.btn-green:active {
+    transform: translateY(1px);
+}
+
+.export-box summary {
+    list-style: none;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 100%;
+    height: 44px;
+
+    text-align: center;
+}
+
+.export-box summary::-webkit-details-marker {
+    display: none;
+}
+
+.btn-blue {
+    background: #1051ae;
+    color: white;
+}
+
+.btn-light {
+    background: #eef2f7;
+    color: #263247;
+}
+
+.btn-red {
+    background: #d9363e;
+    color: white;
+}
+
+.filters {
+    padding: 8px 16px 14px;
+    display: grid;
+    grid-template-columns:
+        repeat(
+            6,
+            minmax(120px, 1fr)
+        );
+    gap: 8px;
+}
+
+.user-search-filters {
+    grid-template-columns:
+        minmax(0, 2fr)
+        150px
+        150px;
+}
+
+.filters label {
+    display: block;
+    font-size: 9px;
+    color: #778195;
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.filters input,
+.filters select {
+    width: 100%;
+    min-height: 34px;
+    border: 1px solid #dfe5ed;
+    border-radius: 5px;
+    padding: 0 8px;
+    font-size: 11px;
+}
+
+.filter-buttons {
+    display: flex;
+    gap: 6px;
+    align-items: end;
+}
+
+.table-wrap {
+    overflow: auto;
+    border-top: 1px solid #edf0f5;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 1050px;
+}
+
+th,
+td {
+    padding: 9px 10px;
+    text-align: left;
+    border-bottom: 1px solid #edf0f4;
+    font-size: 10px;
+    vertical-align: top;
+}
+
+th {
+    background: #f8f9fc;
+    color: #4b5568;
+}
+
+.status {
+    padding: 4px 7px;
+    border-radius: 20px;
+    font-size: 9px;
+    font-weight: bold;
+    display: inline-block;
+}
+
+.ok {
+    background: #d9f7e7;
+    color: #087444;
+}
+
+.bad {
+    background: #ffe2e4;
+    color: #aa2028;
+}
+
+.warn {
+    background: #fff0c5;
+    color: #765300;
+}
+
+.empty {
+    text-align: center;
+    color: #7b879a;
+    padding: 25px;
+}
+
+.export-box {
+    position: relative;
+}
+
+.export-box details {
+    position: relative;
+}
+
+.export-box summary {
+    list-style: none;
+}
+
+.export-menu {
+    position: absolute;
+    right: 0;
+    top: 40px;
+    z-index: 50;
+    background: white;
+    border: 1px solid #dfe4ec;
+    border-radius: 8px;
+    width: 245px;
+    padding: 6px;
+    box-shadow:
+        0 12px 30px
+        rgba(0,0,0,.15);
+}
+
+.export-menu button {
+    width: 100%;
+    border: 0;
+    background: white;
+    text-align: left;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.export-menu button:hover {
+    background: #f2f6fd;
+}
+
+#toast {
+    display: none;
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    max-width: calc(100vw - 32px);
+    background: #253247;
+    color: white;
+    padding: 12px 14px;
+    border-radius: 7px;
+    font-size: 11px;
+    z-index: 999;
+}
+
+@media(max-width:1000px) {
+
+    .cards {
+        grid-template-columns:
+            repeat(3,minmax(0,1fr));
+    }
+
+    .filters {
+        grid-template-columns:
+            repeat(3,1fr);
+    }
+}
+
+@media(max-width:650px) {
+
+    .cards {
+        grid-template-columns:
+            repeat(2,minmax(0,1fr));
+    }
+
+    .filters {
+        grid-template-columns:1fr;
+    }
+
+    header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        padding: 16px;
+    }
+
+    header h1 {
+        font-size: 20px;
+    }
+
+    header > div:last-child {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .container {
+        padding: 12px;
+    }
+
+    .panel-title {
+        flex-wrap: wrap;
+    }
+
+    .filters.user-search-filters {
+        grid-template-columns: 1fr;
+    }
+
+    .filter-buttons {
+        flex-wrap: wrap;
+    }
+
+    .filter-buttons .btn {
+        flex: 1 1 120px;
+    }
+}
+
+</style>
+
+</head>
+
+<body>
+
+<section id="loginScreen">
+
+<div class="login-box">
+
+<h1>
+Attendance Administration
+</h1>
+
+<p>
+Authorized management login only.
+</p>
+
+<form id="loginForm">
+
+<div class="field">
+
+<label>
+Username
+</label>
+
+<input
+    id="username"
+    required>
+
+</div>
+
+<div class="field">
+
+<label>
+Password
+</label>
+
+<input
+    id="password"
+    type="password"
+    required>
+
+</div>
+
+<button
+    class="login-btn"
+    type="submit">
+Login
+</button>
+
+<div id="errorBox">
+</div>
+
+</form>
+
+</div>
+
+</section>
+
+
+<section
+    id="dashboard"
+    class="hidden">
+
+<header>
+
+<div>
+
+<h1>
+Attendance Administration
+</h1>
+
+<p>
+Live backend-connected attendance,
+reports, IP security and device audit
+</p>
+
+</div>
+
+<div>
+
+<span id="adminName">
+</span>
+
+<button
+    class="logout"
+    onclick="logoutAdmin()">
+Logout
+</button>
+
+</div>
+
+</header>
+
+
+<div class="container">
+
+<div class="cards">
+
+<div class="card">
+<small>Total Users</small>
+<strong id="totalUsers">0</strong>
+</div>
+
+<div class="card">
+<small>Present Now</small>
+<strong id="presentUsers">0</strong>
+</div>
+
+<div class="card">
+<small>Checked Out Today</small>
+<strong id="checkedOutToday">0</strong>
+</div>
+
+<div class="card">
+<small>Activity Today</small>
+<strong id="activityToday">0</strong>
+</div>
+
+<div class="card">
+<small>Registered Devices</small>
+<strong id="registeredDevices">0</strong>
+</div>
+
+<div class="card">
+<small>Denied Logs</small>
+<strong id="deniedLogs">0</strong>
+</div>
+
+</div>
+
+
+<section class="panel">
+
+<div class="panel-title">
+
+<div>
+
+<h2>
+Attendance & Reports
+</h2>
+
+<p>
+Employee attendance history and reports
+</p>
+
+</div>
+
+<div class="actions">
+
+<div class="export-box">
+
+<details>
+
+<summary
+    class="btn btn-green">
+Export Attendance ▾
+</summary>
+
+<div class="export-menu">
+
+<button
+    onclick="exportAll()">
+Export All in One CSV
+</button>
+
+<button
+    onclick="exportSeparate()">
+Export Separate Employee CSVs
+</button>
+
+</div>
+
+</details>
+
+</div>
+
+<button
+    class="btn btn-light"
+    onclick="refreshAll()">
+Refresh
+</button>
+
+</div>
+
+</div>
+
+
+<div class="filters">
+
+<div>
+<label>USERNAME</label>
+<input
+    id="attUser"
+    placeholder="All users">
+</div>
+
+<div>
+<label>FROM</label>
+<input
+    id="attFrom"
+    type="date">
+</div>
+
+<div>
+<label>TO</label>
+<input
+    id="attTo"
+    type="date">
+</div>
+
+<div>
+<label>STATUS</label>
+
+<select id="attStatus">
+
+<option value="">
+All
+</option>
+
+<option value="Present">
+Present
+</option>
+
+<option value="Checked Out">
+Checked Out
+</option>
+
+</select>
+
+</div>
+
+<div>
+<label>SEARCH</label>
+<input
+    id="attSearch"
+    placeholder="Name / IP / device">
+</div>
+
+<div class="filter-buttons">
+
+<button
+    class="btn btn-blue"
+    onclick="loadAttendance()">
+Apply Filter
+</button>
+
+<button
+    class="btn btn-light"
+    onclick="resetAttendance()">
+Reset
+</button>
+
+</div>
+
+</div>
+
+
+<div class="table-wrap">
+
+<table>
+
+<thead>
+
+<tr>
+<th>User</th>
+<th>Full Name</th>
+<th>Date</th>
+<th>Check In</th>
+<th>Check Out</th>
+<th>Total Span</th>
+<th>Network Away</th>
+<th>Actual Office Time</th>
+<th>Status</th>
+<th>Check-In IP</th>
+<th>Check-Out IP</th>
+<th>Device</th>
+<th>Report</th>
+</tr>
+
+</thead>
+
+<tbody id="attendanceRows">
+</tbody>
+
+</table>
+
+</div>
+
+</section>
+
+
+<section class="panel">
+
+<div class="panel-title">
+
+<div>
+
+<h2>
+Users & Registered Devices
+</h2>
+
+<p>
+Users, roles and workstation binding
+</p>
+
+</div>
+
+</div>
+
+
+<div class="filters user-search-filters">
+
+<div>
+
+<label>
+SEARCH USER
+</label>
+
+<input
+    id="userSearch"
+    placeholder="Name / username / email / device">
+
+</div>
+
+<div class="filter-buttons">
+
+<button
+    class="btn btn-blue"
+    onclick="loadUsers()">
+Search
+</button>
+
+</div>
+
+<div class="filter-buttons">
+
+<button
+    class="btn btn-light"
+    onclick="resetUsers()">
+Reset
+</button>
+
+</div>
+
+</div>
+
+
+<div class="table-wrap">
+
+<table>
+
+<thead>
+
+<tr>
+<th>ID</th>
+<th>Username</th>
+<th>Full Name</th>
+<th>Email</th>
+<th>Role</th>
+<th>Team</th>
+<th>Device</th>
+<th>IP</th>
+<th>Registered</th>
+<th>Status</th>
+<th>Action</th>
+</tr>
+
+</thead>
+
+<tbody id="userRows">
+</tbody>
+
+</table>
+
+</div>
+
+</section>
+
+
+<section class="panel">
+
+<div class="panel-title">
+<div>
+<h2>Office Wi-Fi / IP Management</h2>
+<p>Add or remove approved office networks. On cloud deployment, use Current Network so the server stores the public IP/range actually seen from the office Wi-Fi. IPv6 is stored as a /64 range.</p>
+</div>
+<button class="btn btn-light" onclick="loadNetworks(true)">Refresh</button>
+</div>
+
+<div class="filters">
+<div>
+<label>NETWORK NAME</label>
+<input id="networkName" placeholder="Main Office WiFi">
+</div>
+<div>
+<label>IP / NETWORK RANGE</label>
+<input id="networkIp" placeholder="Use Current Network, or enter IPv4 / IPv6 CIDR">
+</div>
+<div class="filter-buttons">
+<button class="btn btn-light" onclick="useCurrentIp()">Use My Current Network</button>
+</div>
+<div class="filter-buttons">
+<button class="btn btn-blue" onclick="addNetwork()">Add Wi-Fi</button>
+</div>
+</div>
+
+<div id="networkStatus" style="margin:8px 0 10px;color:#667085;font-size:13px"></div>
+<div class="table-wrap">
+<table>
+<thead><tr><th>ID</th><th>Name</th><th>Approved IP / Range</th><th>Status</th><th>Added</th><th>Action</th></tr></thead>
+<tbody id="networkRows"></tbody>
+</table>
+</div>
+
+</section>
+
+<section class="panel">
+
+<div class="panel-title">
+
+<div>
+
+<h2>
+Login & IP Activity Logs
+</h2>
+
+<p>
+Authentication and security history
+</p>
+
+</div>
+
+<button
+    class="btn btn-light"
+    onclick="loadLogs()">
+Refresh
+</button>
+
+</div>
+
+
+<div class="filters">
+
+<div>
+<label>USERNAME</label>
+<input id="logUser">
+</div>
+
+<div>
+<label>FROM</label>
+<input
+    id="logFrom"
+    type="date">
+</div>
+
+<div>
+<label>TO</label>
+<input
+    id="logTo"
+    type="date">
+</div>
+
+<div>
+<label>STATUS</label>
+
+<select id="logStatus">
+
+<option value="">
+All
+</option>
+
+<option value="Allowed">
+Allowed
+</option>
+
+<option value="Denied">
+Denied
+</option>
+
+</select>
+
+</div>
+
+<div>
+<label>SEARCH</label>
+<input id="logSearch">
+</div>
+
+<div class="filter-buttons">
+
+<button
+    class="btn btn-blue"
+    onclick="loadLogs()">
+Apply Filter
+</button>
+
+<button
+    class="btn btn-light"
+    onclick="resetLogs()">
+Reset
+</button>
+
+</div>
+
+</div>
+
+
+<div class="table-wrap">
+
+<table>
+
+<thead>
+
+<tr>
+<th>ID</th>
+<th>Time</th>
+<th>Username</th>
+<th>Action</th>
+<th>IP</th>
+<th>Status</th>
+</tr>
+
+</thead>
+
+<tbody id="logRows">
+</tbody>
+
+</table>
+
+</div>
+
+</section>
+
+</div>
+
+</section>
+
+
+<div id="toast">
+</div>
+
+
+<script>
+
+const API_BASE = (location.protocol === "file:") ? "http://localhost:4000" : window.location.origin; // unified Express + PostgreSQL backend
+
+const TOKEN =
+    "attendanceAdminToken";
+
+const ADMIN =
+    "attendanceAdminName";
+
+
+function esc(value) {
+
+    return String(
+        value ?? ""
+    )
+    .replaceAll(
+        "&",
+        "&amp;"
+    )
+    .replaceAll(
+        "<",
+        "&lt;"
+    )
+    .replaceAll(
+        ">",
+        "&gt;"
+    )
+    .replaceAll(
+        '"',
+        "&quot;"
+    )
+    .replaceAll(
+        "'",
+        "&#039;"
+    );
+}
+
+
+function getToken() {
+
+    return sessionStorage
+        .getItem(
+            TOKEN
+        );
+}
+
+
+function showToast(
+    message,
+    error = false) {
+
+    const box =
+        document.getElementById(
+            "toast"
+        );
+
+    box.textContent =
+        message;
+
+    box.style.background =
+        error
+            ? "#aa2028"
+            : "#253247";
+
+    box.style.display =
+        "block";
+
+    setTimeout(
+        () => {
+            box.style.display =
+                "none";
+        },
+        3000
+    );
+}
+
+
+function queryString(
+    data) {
+
+    const q =
+        new URLSearchParams();
+
+    Object.entries(
+        data
+    )
+    .forEach(
+        ([key,value]) => {
+
+            if (
+                value !== null &&
+                value !== undefined &&
+                String(value)
+                    .trim() !== ""
+            ) {
+                q.set(
+                    key,
+                    String(value)
+                        .trim()
+                );
+            }
+        }
+    );
+
+    const result =
+        q.toString();
+
+    return result
+        ? "?" + result
+        : "";
+}
+
+
+async function api(
+    url,
+    options = {}) {
+
+    const headers =
+        {
+            ...(options.headers || {}),
+            Authorization:
+                "Bearer " +
+                getToken()
+        };
+
+    const response =
+        await fetch(
+            API_BASE + url,
+            {
+                ...options,
+                headers
+            }
+        );
+
+    if (
+        response.status === 401
+    ) {
+        sessionStorage.clear();
+        showLogin();
+
+        throw new Error(
+            "Admin session expired."
+        );
+    }
+
+    return response;
+}
+
+
+function showLogin() {
+
+    document
+        .getElementById(
+            "dashboard"
+        )
+        .classList
+        .add(
+            "hidden"
+        );
+
+    document
+        .getElementById(
+            "loginScreen"
+        )
+        .classList
+        .remove(
+            "hidden"
+        );
+}
+
+
+function showDashboard() {
+
+    document
+        .getElementById(
+            "loginScreen"
+        )
+        .classList
+        .add(
+            "hidden"
+        );
+
+    document
+        .getElementById(
+            "dashboard"
+        )
+        .classList
+        .remove(
+            "hidden"
+        );
+
+    document
+        .getElementById(
+            "adminName"
+        )
+        .textContent =
+            sessionStorage
+                .getItem(
+                    ADMIN
+                )
+            || "";
+}
+
+
+document
+    .getElementById(
+        "loginForm"
+    )
+    .addEventListener(
+        "submit",
+        async event => {
+
+            event.preventDefault();
+
+            const username =
+                document
+                    .getElementById(
+                        "username"
+                    )
+                    .value
+                    .trim();
+
+            const password =
+                document
+                    .getElementById(
+                        "password"
+                    )
+                    .value;
+
+            const errorBox =
+                document
+                    .getElementById(
+                        "errorBox"
+                    );
+
+            errorBox.style.display =
+                "none";
+
+            try {
+
+                const response =
+                    await fetch(
+                        API_BASE + "/api/workforce/admin/web-login",
+                        {
+                            method:
+                                "POST",
+
+                            headers:
+                            {
+                                "Content-Type":
+                                    "application/json"
+                            },
+
+                            body:
+                                JSON.stringify(
+                                    {
+                                        username,
+                                        password,
+                                        deviceId:
+                                            null
+                                    }
+                                )
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                if (
+                    !response.ok ||
+                    !data.success
+                ) {
+                    throw new Error(
+                        data.message ||
+                        "Login failed."
+                    );
+                }
+
+                sessionStorage.setItem(
+                    TOKEN,
+                    data.token
+                );
+
+                sessionStorage.setItem(
+                    ADMIN,
+                    data.fullName ||
+                    data.username
+                );
+
+                showDashboard();
+
+                await refreshAll();
+
+            }
+            catch(error) {
+
+                errorBox.textContent =
+                    error.message;
+
+                errorBox.style.display =
+                    "block";
+            }
+        }
+    );
+
+
+async function logoutAdmin() {
+
+    try {
+
+        await api(
+            "/api/workforce/admin/session",
+            {
+                method:
+                    "DELETE"
+            }
+        );
+
+    }
+    catch(_) {
+    }
+
+    sessionStorage.clear();
+
+    showLogin();
+}
+
+
+function attendanceQuery() {
+
+    return queryString(
+        {
+            username:
+                document
+                    .getElementById(
+                        "attUser"
+                    )
+                    .value,
+
+            fromDate:
+                document
+                    .getElementById(
+                        "attFrom"
+                    )
+                    .value,
+
+            toDate:
+                document
+                    .getElementById(
+                        "attTo"
+                    )
+                    .value,
+
+            status:
+                document
+                    .getElementById(
+                        "attStatus"
+                    )
+                    .value,
+
+            search:
+                document
+                    .getElementById(
+                        "attSearch"
+                    )
+                    .value
+        }
+    );
+}
+
+
+async function loadDashboard() {
+
+    const response =
+        await api(
+            "/api/workforce/admin/dashboard"
+        );
+
+    if (!response.ok) {
+        throw new Error(
+            "Dashboard data load failed."
+        );
+    }
+
+    const data =
+        await response.json();
+
+    document.getElementById(
+        "totalUsers"
+    ).textContent =
+        data.totalUsers ?? 0;
+
+    document.getElementById(
+        "presentUsers"
+    ).textContent =
+        data.presentUsers ?? 0;
+
+    document.getElementById(
+        "checkedOutToday"
+    ).textContent =
+        data.checkedOutToday ?? 0;
+
+    document.getElementById(
+        "activityToday"
+    ).textContent =
+        data.activityToday ?? 0;
+}
+
+
+async function loadAttendance() {
+
+    const response =
+        await api(
+            "/api/workforce/admin/attendance" +
+            attendanceQuery()
+        );
+
+    if (!response.ok) {
+        throw new Error(
+            "Attendance load failed."
+        );
+    }
+
+    const data =
+        await response.json();
+
+    const body =
+        document.getElementById(
+            "attendanceRows"
+        );
+
+    if (!data.length) {
+
+        body.innerHTML =
+            '<tr>' +
+            '<td colspan="13" class="empty">' +
+            'No attendance records found.' +
+            '</td>' +
+            '</tr>';
+
+        return;
+    }
+
+    body.innerHTML =
+        data
+        .map(
+            row => {
+
+                const checkedOut =
+                    row.status ===
+                    "Checked Out";
+
+                return (
+                    "<tr>" +
+
+                    "<td><b>" +
+                    esc(row.user) +
+                    "</b></td>" +
+
+                    "<td>" +
+                    esc(row.fullName) +
+                    "</td>" +
+
+                    "<td>" +
+                    esc(row.date) +
+                    "</td>" +
+
+                    "<td>" +
+                    esc(row.checkIn) +
+                    "</td>" +
+
+                    "<td>" +
+                    esc(row.checkOut || "-") +
+                    "</td>" +
+
+                    "<td>" +
+                    esc(row.totalSpanText || "0m") +
+                    "</td>" +
+
+                    "<td>" +
+                    esc(row.networkAwayText || "0m") +
+                    "</td>" +
+
+                    "<td><b>" +
+                    esc(row.actualOfficeTimeText || "0m") +
+                    "</b></td>" +
+
+                    '<td><span class="status ' +
+                    (
+                        checkedOut
+                            ? "warn"
+                            : "ok"
+                    ) +
+                    '">' +
+                    esc(row.status) +
+                    "</span></td>" +
+
+                    "<td>" +
+                    esc(row.checkInIp || "-") +
+                    "</td>" +
+
+                    "<td>" +
+                    esc(row.checkOutIp || "-") +
+                    "</td>" +
+
+                    "<td>" +
+                    esc(row.deviceId || "-") +
+                    "</td>" +
+
+                    "<td>" +
+                    esc(row.report || "-") +
+                    "</td>" +
+
+                    "</tr>"
+                );
+            }
+        )
+        .join("");
+}
+
+
+function resetAttendance() {
+
+    document.getElementById(
+        "attUser"
+    ).value = "";
+
+    document.getElementById(
+        "attFrom"
+    ).value = "";
+
+    document.getElementById(
+        "attTo"
+    ).value = "";
+
+    document.getElementById(
+        "attStatus"
+    ).value = "";
+
+    document.getElementById(
+        "attSearch"
+    ).value = "";
+
+    loadAttendance();
+}
+
+
+async function loadUsers() {
+
+    const search =
+        document
+            .getElementById(
+                "userSearch"
+            )
+            .value;
+
+    const response =
+        await api(
+            "/api/workforce/admin/users" +
+            queryString(
+                {
+                    search
+                }
+            )
+        );
+
+    if (!response.ok) {
+        throw new Error(
+            "Users load failed."
+        );
+    }
+
+    const data =
+        await response.json();
+
+    document.getElementById(
+        "registeredDevices"
+    ).textContent =
+        data.filter(
+            item =>
+                !!item.deviceId
+        ).length;
+
+    const body =
+        document.getElementById(
+            "userRows"
+        );
+
+    if (!data.length) {
+
+        body.innerHTML =
+            '<tr>' +
+            '<td colspan="11" class="empty">' +
+            'No users found.' +
+            '</td>' +
+            '</tr>';
+
+        return;
+    }
+
+    body.innerHTML =
+        data
+        .map(
+            user => {
+
+                const registered =
+                    !!user.deviceId;
+
+                const button =
+                    user.deviceBindingId
+                        ?
+                        '<button class="btn btn-red" ' +
+                        'onclick="resetDevice(' +
+                        Number(
+                            user.deviceBindingId
+                        ) +
+                        ')">Reset</button>'
+                        :
+                        "-";
+
+                return (
+                    "<tr>" +
+
+                    "<td>" +
+                    esc(user.id) +
+                    "</td>" +
+
+                    "<td><b>" +
+                    esc(user.username) +
+                    "</b></td>" +
+
+                    "<td>" +
+                    esc(user.fullName) +
+                    "</td>" +
+
+                    "<td>" +
+                    esc(user.email || "-") +
+                    "</td>" +
+
+                    "<td>" +
+                    esc(user.role || "-") +
+                    "</td>" +
+
+                    "<td>" +
+                    esc(user.team || "-") +
+                    "</td>" +
+
+                    "<td>" +
+                    esc(user.deviceId || "-") +
+                    "</td>" +
+
+                    "<td>" +
+                    esc(user.ipAddress || "-") +
+                    "</td>" +
+
+                    "<td>" +
+                    esc(user.registeredAt || "-") +
+                    "</td>" +
+
+                    '<td><span class="status ' +
+                    (
+                        registered
+                            ? "ok"
+                            : "warn"
+                    ) +
+                    '">' +
+                    (
+                        registered
+                            ? "Registered"
+                            : "Not Registered"
+                    ) +
+                    "</span></td>" +
+
+                    "<td>" +
+                    button +
+                    "</td>" +
+
+                    "</tr>"
+                );
+            }
+        )
+        .join("");
+}
+
+
+function resetUsers() {
+
+    document.getElementById(
+        "userSearch"
+    ).value = "";
+
+    loadUsers();
+}
+
+
+async function resetDevice(
+    id) {
+
+    if (
+        !confirm(
+            "Reset this registered device?"
+        )
+    ) {
+        return;
+    }
+
+    const response =
+        await api(
+            "/api/workforce/admin/devices/" +
+            id +
+            "/reset",
+            {
+                method:
+                    "POST"
+            }
+        );
+
+    const data =
+        await response.json();
+
+    if (!response.ok) {
+        throw new Error(
+            data.message ||
+            "Device reset failed."
+        );
+    }
+
+    showToast(
+        data.message ||
+        "Device reset successfully."
+    );
+
+    await loadUsers();
+    await loadLogs();
+}
+
+
+function logsQuery() {
+
+    return queryString(
+        {
+            username:
+                document
+                    .getElementById(
+                        "logUser"
+                    )
+                    .value,
+
+            fromDate:
+                document
+                    .getElementById(
+                        "logFrom"
+                    )
+                    .value,
+
+            toDate:
+                document
+                    .getElementById(
+                        "logTo"
+                    )
+                    .value,
+
+            status:
+                document
+                    .getElementById(
+                        "logStatus"
+                    )
+                    .value,
+
+            search:
+                document
+                    .getElementById(
+                        "logSearch"
+                    )
+                    .value
+        }
+    );
+}
+
+
+async function loadLogs() {
+
+    const response =
+        await api(
+            "/api/workforce/admin/ip-logs" +
+            logsQuery()
+        );
+
+    if (!response.ok) {
+        throw new Error(
+            "Logs load failed."
+        );
+    }
+
+    const data =
+        await response.json();
+
+    document.getElementById(
+        "deniedLogs"
+    ).textContent =
+        data.filter(
+            item =>
+                !item.allowed
+        ).length;
+
+    const body =
+        document.getElementById(
+            "logRows"
+        );
+
+    if (!data.length) {
+
+        body.innerHTML =
+            '<tr>' +
+            '<td colspan="6" class="empty">' +
+            'No activity logs found.' +
+            '</td>' +
+            '</tr>';
+
+        return;
+    }
+
+    body.innerHTML =
+        data
+        .map(
+            row =>
+                "<tr>" +
+
+                "<td>" +
+                esc(row.id) +
+                "</td>" +
+
+                "<td>" +
+                esc(row.time) +
+                "</td>" +
+
+                "<td>" +
+                esc(row.username || "-") +
+                "</td>" +
+
+                "<td>" +
+                esc(row.action) +
+                "</td>" +
+
+                "<td>" +
+                esc(row.ip) +
+                "</td>" +
+
+                '<td><span class="status ' +
+                (
+                    row.allowed
+                        ? "ok"
+                        : "bad"
+                ) +
+                '">' +
+                (
+                    row.allowed
+                        ? "Allowed"
+                        : "Denied"
+                ) +
+                "</span></td>" +
+
+                "</tr>"
+        )
+        .join("");
+}
+
+
+function resetLogs() {
+
+    document.getElementById(
+        "logUser"
+    ).value = "";
+
+    document.getElementById(
+        "logFrom"
+    ).value = "";
+
+    document.getElementById(
+        "logTo"
+    ).value = "";
+
+    document.getElementById(
+        "logStatus"
+    ).value = "";
+
+    document.getElementById(
+        "logSearch"
+    ).value = "";
+
+    loadLogs();
+}
+
+
+async function loadNetworks(showMessage = false) {
+    const status = document.getElementById("networkStatus");
+    const body = document.getElementById("networkRows");
+    try {
+        if (status) status.textContent = "Loading approved Wi-Fi rules...";
+        const response = await api("/api/workforce/admin/networks");
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || "Office Wi-Fi list could not be loaded.");
+        const rows = Array.isArray(data) ? data : [];
+        body.innerHTML = rows.length ? rows.map(n => `
+            <tr>
+              <td>${esc(n.id ?? "")}</td>
+              <td>${esc(n.name ?? "")}</td>
+              <td>${esc(n.publicIp ?? n.rule ?? "")}</td>
+              <td>${n.isActive ? "Active" : "Disabled"}</td>
+              <td>${esc(n.createdAt ?? "")}</td>
+              <td><button class="btn btn-red" onclick="deleteNetwork(${Number(n.id)})">Delete</button></td>
+            </tr>`).join("") : `<tr><td colspan="6">No approved office Wi-Fi rule added yet.</td></tr>`;
+        if (status) status.textContent = `${rows.length} approved rule${rows.length === 1 ? "" : "s"} loaded.`;
+        if (showMessage) showToast("Office Wi-Fi list refreshed.");
+        return rows;
+    } catch (error) {
+        if (body) body.innerHTML = `<tr><td colspan="6">${esc(error.message)}</td></tr>`;
+        if (status) status.textContent = error.message;
+        if (showMessage) showToast(error.message, true);
+        return [];
+    }
+}
+
+async function useCurrentIp() {
+    try {
+        const response = await api("/api/workforce/admin/networks/current-ip");
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || "IP detection failed.");
+        document.getElementById("networkIp").value = data.suggestedRule || data.publicIp || "";
+        showToast("Current office network/range loaded.");
+    } catch (error) { showToast(error.message, true); }
+}
+
+async function addNetwork() {
+    const name = document.getElementById("networkName").value.trim();
+    const publicIp = document.getElementById("networkIp").value.trim();
+    if (!name || !publicIp) { showToast("Enter network name and IP/range.", true); return; }
+    try {
+        const response = await api("/api/workforce/admin/networks", {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({name, publicIp})
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || "Could not add office Wi-Fi.");
+        document.getElementById("networkName").value = "";
+        document.getElementById("networkIp").value = "";
+        showToast(data.message || "Office Wi-Fi added.");
+        await loadNetworks(false);
+    } catch (error) { showToast(error.message, true); }
+}
+
+async function deleteNetwork(id) {
+    if (!confirm("Delete this approved office Wi-Fi/IP?")) return;
+    try {
+        const response = await api(`/api/workforce/admin/networks/${id}`, {method:"DELETE"});
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || "Could not delete office Wi-Fi.");
+        showToast(data.message || "Office Wi-Fi deleted.");
+        await loadNetworks(false);
+    } catch (error) { showToast(error.message, true); }
+}
+
+async function downloadFile(
+    url,
+    defaultName) {
+
+    try {
+
+        const response =
+            await api(
+                url
+            );
+
+        if (!response.ok) {
+
+            let message =
+                "Export failed.";
+
+            try {
+
+                const data =
+                    await response.json();
+
+                message =
+                    data.message ||
+                    message;
+
+            }
+            catch(_) {
+            }
+
+            throw new Error(
+                message
+            );
+        }
+
+        const blob =
+            await response.blob();
+
+        const link =
+            document.createElement(
+                "a"
+            );
+
+        const blobUrl =
+            URL.createObjectURL(
+                blob
+            );
+
+        link.href =
+            blobUrl;
+
+        link.download =
+            defaultName;
+
+        document.body.appendChild(
+            link
+        );
+
+        link.click();
+
+        link.remove();
+
+        setTimeout(
+            () =>
+                URL.revokeObjectURL(
+                    blobUrl
+                ),
+            1000
+        );
+
+        showToast(
+            "Export completed."
+        );
+
+    }
+    catch(error) {
+
+        showToast(
+            error.message,
+            true
+        );
+    }
+}
+
+// =============================================================
+// ATTENDANCE EXPORT FIX
+// =============================================================
+//
+// Export All:
+//   Sab employees ki COMPLETE attendance ek CSV file me.
+//
+// Export Separate:
+//   Har employee ki COMPLETE attendance alag CSV me.
+//   Sab employee CSV files ek ZIP ke andar.
+//
+// IMPORTANT:
+// attendanceQuery() intentionally use nahi ho rahi,
+// taa-ke screen filters export ko limit na karein.
+// =============================================================
+
+
+function exportAll() {
+
+    const today =
+        new Date()
+            .toISOString()
+            .slice(0, 10);
+
+    downloadFile(
+        "/api/workforce/admin/attendance/export",
+        "all-employees-attendance-" +
+        today +
+        ".csv"
+    );
+}
+
+
+function exportSeparate() {
+
+    const today =
+        new Date()
+            .toISOString()
+            .slice(0, 10);
+
+    downloadFile(
+        "/api/workforce/admin/attendance/export-separate",
+        "separate-employees-attendance-" +
+        today +
+        ".zip"
+    );
+}
+
+async function refreshAll() {
+
+    try {
+
+        await Promise.all(
+            [
+                loadDashboard(),
+                loadAttendance(),
+                loadUsers(),
+                loadLogs(),
+                loadNetworks()
+            ]
+        );
+
+    }
+    catch(error) {
+
+        showToast(
+            error.message,
+            true
+        );
+    }
+}
+
+
+window.addEventListener(
+    "load",
+    async () => {
+
+        if (!getToken()) {
+            showLogin();
+            return;
+        }
+
+        showDashboard();
+
+        await refreshAll();
+    }
+);
+
+</script>
+
+</body>
+
+</html>

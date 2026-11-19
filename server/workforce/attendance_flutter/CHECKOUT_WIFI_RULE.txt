@@ -1,0 +1,12 @@
+CHECKOUT OFFICE WI-FI RULE
+=========================
+
+This build requires an approved OfficeNetworks entry for employee checkout.
+
+Rules:
+- Check-in/network flow continues to use the existing approved-office network checks.
+- Checkout button verification requires the current public IP / IPv6 /64 to match an active OfficeNetworks rule.
+- Final submit-report/checkout repeats the same check on the Cloudflare Worker, so mobile data or another Wi-Fi cannot bypass it.
+- If no approved office network is configured, checkout is blocked until management adds one.
+- A failed checkout from mobile data does NOT flush/close the local away interval.
+- When the employee returns to approved office Wi-Fi, the pending away interval is closed and that away duration remains excluded from Actual Office Time.

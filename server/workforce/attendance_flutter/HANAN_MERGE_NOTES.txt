@@ -1,0 +1,44 @@
+FINAL MERGED VERSION
+
+Mobile app:
+- Existing Flutter/mobile flow preserved.
+- Cloud backend remains: https://attendance-backend.abrar-attendance.workers.dev
+- Fingerprint/mobile attendance behavior remains in the Flutter app.
+
+Web admin:
+- Uses the second ZIP's Attendance Administration web design.
+- Run locally with run_admin_web.ps1
+- Open: http://127.0.0.1:5267/admin
+- The web page sends admin API requests to the Cloudflare Worker, so web changes and mobile use the same D1 data.
+- Web login is password-only.
+
+Office Wi-Fi / IP management:
+- Admin can add/delete approved office public IP/network rules.
+- 'Use My Current IP' is available on web and Flutter Attendance Administration.
+- IPv4 is matched exactly.
+- IPv6 is normalized to /64 so different phones on the same IPv6 office network can match.
+- If no office networks are configured, network checking stays in setup mode (allowed) so the app is not locked out.
+- When an approved network exists, check-network denies connections outside the approved rules.
+- Existing network-disconnect tracking remains; there is no automatic checkout.
+
+Cloud deployment:
+1. PowerShell: Set-ExecutionPolicy -Scope Process Bypass
+2. .\deploy_cloudflare.ps1
+
+Flutter APK build:
+flutter pub get
+flutter build apk --release --dart-define=API_BASE_URL=https://attendance-backend.abrar-attendance.workers.dev
+
+Important:
+- After deploying the new Worker, use Admin > Office Wi-Fi > Use My Current IP > Add Wi-Fi.
+- If the office ISP changes public IP/range, add the new rule before removing the old one.
+
+
+OFFICE TIME CALCULATION UPDATE
+------------------------------
+- Actual office time is NOT capped at 8 hours. 8h, 9h, 10h+ are preserved exactly.
+- Formula: Actual Office Time = Check-out/Current Time - Check-in - Approved-network Away Time.
+- Admin web and Flutter Attendance Administration show Total Span, Network Away, and Actual Office Time.
+- CSV exports include these timing columns.
+- Before checkout, the Flutter app flushes any locally pending away interval to the cloud backend.
+- Tracking uses the existing 30-second network check, so transitions can have roughly 30-second granularity while the app process is running.

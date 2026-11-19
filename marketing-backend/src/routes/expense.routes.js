@@ -1,0 +1,14 @@
+const router=require('express').Router();
+const s=require('../services/expense.service');
+const audit=require('../services/audit.service');
+const documents=require('./document.routes');
+const {wrap,requireDemoMutation}=require('../utils/http');
+router.get('/',wrap(async(req,res)=>res.json({success:true,data:await s.all(req.query,req.user)})));
+router.post('/',requireDemoMutation,wrap(async(req,res)=>res.status(201).json({success:true,data:await s.create(req.body,req.user)})));
+router.get('/:id',wrap(async(req,res)=>res.json({success:true,data:await s.forUser(req.params.id,req.user)})));
+router.patch('/:id',requireDemoMutation,wrap(async(req,res)=>res.json({success:true,data:await s.update(req.params.id,req.body,req.user)})));
+router.delete('/:id',requireDemoMutation,wrap(async(req,res)=>{await s.remove(req.params.id,req.user);res.json({success:true,message:'Expense deleted'})}));
+router.get('/:id/audit-history',wrap(async(req,res)=>{await s.forUser(req.params.id,req.user);res.json({success:true,data:await audit.history(req.params.id)})}));
+router.post('/:id/submit',requireDemoMutation,wrap(async(req,res)=>res.json({success:true,data:await audit.submit(req.params.id,req.user)})));
+router.use('/:id/documents',documents);
+module.exports=router;

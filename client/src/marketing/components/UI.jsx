@@ -1,0 +1,9 @@
+import React from 'react';
+export const c={navy:'#0b2340',blue:'#0866aa',light:'#f4f7fb',muted:'#708197',border:'#e4eaf1',text:'#132a45',green:'#087a59'};
+export const card={background:'white',border:`1px solid ${c.border}`,borderRadius:16,padding:22,boxShadow:'0 3px 14px rgba(10,37,66,.04)'};
+export const btn={border:0,borderRadius:10,padding:'11px 16px',background:c.blue,color:'white',fontWeight:700,cursor:'pointer'};
+export const field={border:`1px solid ${c.border}`,borderRadius:9,padding:11,width:'100%',boxSizing:'border-box',font:'inherit',background:'white'};
+export function Panel({title,sub,children,right}){return <section style={card}><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,marginBottom:18}}><div><h3 style={{margin:'0 0 4px',fontSize:17}}>{title}</h3>{sub&&<small style={{color:c.muted}}>{sub}</small>}</div>{right}</div>{children}</section>}
+export function Status({children}){let col=children==='Approved'||children==='Connected'||children==='Active'?c.green:'#a06b15';return <span style={{fontSize:12,fontWeight:700,color:col,background:col===c.green?'#e3f8ed':'#fff4d9',padding:'6px 10px',borderRadius:20}}>{children}</span>}
+export function Table({columns,rows}){return <div style={{overflowX:'auto'}}><table style={{borderCollapse:'collapse',width:'100%',minWidth:560,textAlign:'left'}}><thead><tr>{columns.map(x=><th key={x} style={{fontSize:11,letterSpacing:'.07em',color:c.muted,padding:'12px 9px',borderBottom:`1px solid ${c.border}`}}>{x.toUpperCase()}</th>)}</tr></thead><tbody>{rows.map((row,i)=><tr key={i}>{row.map((cell,j)=><td key={j} style={{padding:'15px 9px',fontSize:13,borderBottom:`1px solid ${c.border}`}}>{cell}</td>)}</tr>)}</tbody></table></div>}
+export const money=n=>'Rs. '+Number(n||0).toLocaleString('en-PK');

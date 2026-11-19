@@ -1,0 +1,8 @@
+Wi-Fi/IP management fix
+- Fixed admin portal blank list/refresh bug caused by escapeHtml() vs esc().
+- Add, Refresh and Delete now reload and display the rule list.
+- Multiple Wi-Fi names and multiple public IP/CIDR rules are supported.
+- Existing OfficeNetworks records migrate automatically to OfficeNetworkRules.
+- IPv4 CIDR and IPv6 CIDR matching supported.
+- Denied phone response shows the exact detected public IP/range.
+- If laptop uses IPv6 and phone uses IPv4 on the same physical Wi-Fi, add both rules under the same Wi-Fi name; a public-IP backend cannot infer that dual-stack addresses are the same router.

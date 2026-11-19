@@ -1,0 +1,31 @@
+OFFICE TIME CALCULATION TEST RESULTS
+====================================
+
+Formula:
+Actual Office Time = (Check-out - Check-in) - Network Away Time
+
+No 8-hour cap is applied.
+
+Test 1:
+Check-in: 09:00
+Check-out: 18:00
+Away: 13:00-14:00 (1 hour)
+Total span: 9h 0m
+Actual office time: 8h 0m
+PASS
+
+Test 2:
+Check-in: 09:00
+Check-out: 20:00
+Away: 13:00-14:00 (1 hour)
+Total span: 11h 0m
+Actual office time: 10h 0m
+PASS - confirms time can exceed 8 hours.
+
+Worker JavaScript syntax: PASS (node --check)
+Web dashboard JavaScript syntax: PASS (node --check)
+
+Notes:
+- Mobile network tracking checks approximately every 30 seconds while the app process is running.
+- Pending locally detected away time is flushed before checkout.
+- Admin web / Flutter Attendance Administration and CSV exports expose Total Span, Network Away, Actual Office Time.
