@@ -1,3 +1,5 @@
+co
+<<<<<<< HEAD
 # ScholarshipHive ERP v6 — Unified build
 
 ScholarshipHive ERP, Salary Manager / Salary Analyzer, Attendance and Marketing Expense Analyzer run on **one persistent Node.js host** and use **one PostgreSQL database** (including Neon). The database is organized into schemas: `public` (ERP), `workforce` (Salary + Attendance) and `marketing` (Marketing Analyzer). These are schemas inside the same database, not separate databases.
@@ -48,3 +50,6 @@ Do not run tests against production. `npm test` uses `TEST_DATABASE_URL` for des
 Marking a payroll row paid records the accounting/payment status in ERP; it does not initiate a bank transfer. Marketing ad-account sync requires valid platform credentials and a continuously running Node process. Production credentials, OAuth setup, backups, host configuration and third-party security review remain deployment responsibilities.
 
 See [`WORKFORCE_INTEGRATION.md`](WORKFORCE_INTEGRATION.md) and [`MARKETING_ANALYZER_INTEGRATION.md`](MARKETING_ANALYZER_INTEGRATION.md) for module-specific details.
+=======
+# scholarshiphive-erp
+>>>>>>> edbac9723c27d311c828ce2ef2c2592acc5b2afd
